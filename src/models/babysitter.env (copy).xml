@@ -1,0 +1,28 @@
+<environment>
+
+	<KinBody file="/home/mrsd/Code/ra_ws/src/babysitter/src/models/table.kinbody.xml">
+      <Translation>0 0 0</Translation>
+      <rotationaxis>1 0 0 90</rotationaxis>
+    </KinBody>
+	
+	<KinBody file="/home/mrsd/Code/ra_ws/src/babysitter/src/models/box.kinbody.xml">
+      <Translation>1 -1 0.7235</Translation>
+      <rotationaxis>1 0 0 0</rotationaxis>
+    </KinBody>
+
+    <sensor name="BaseCamera1" file="./camera.sensor.xml">
+  		<translation>0 0 1</translation>
+  		<rotationaxis>0 0 1 270</rotationaxis>
+	</sensor>
+
+	<KinBody name="floor">
+		<Body type="static">
+			<Translation>0 0 0</Translation>
+			<Geom type="box">
+				<extents>1 1 0.001</extents>
+				<diffuseColor>0.3 1 0.3</diffuseColor>
+				<ambientColor>0.3 1 0.3</ambientColor>
+			</Geom>
+		</Body>
+	</KinBody>
+</environment>
