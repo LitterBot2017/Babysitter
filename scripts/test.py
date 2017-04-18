@@ -6,20 +6,160 @@ from cv_bridge import CvBridge, CvBridgeError
 from openravepy import *
 #import offscreen_render
 import cv2
+from Node import Node
+from prpy.planning import CBiRRTPlanner
+
+currTheta = 0
+currR = 0
+currHeight = 0
+
+#traj1 = openravepy.planningutils.RetimeActiveDOFTrajectory(traj, robot, False, 0.2, 0.2, "LinearTrajectoryRetimer", "")
+#traj = a.PlanToEndEffectorOffset(robot, [0.25, 0.25, 0], 0.1, )
+
 
 def PlanToTransform(env, robot, transform):
+    
     handle = openravepy.misc.DrawAxes(env, transform);
     iksolver = robot.arm.GetIkSolver()
     param = openravepy.IkParameterization(transform, openravepy.IkParameterizationType.Transform6D)
     solution = iksolver.Solve(param, robot.GetActiveDOFValues(),  0)
-    traj =  robot.PlanToConfiguration(solution.GetSolution(),execute=True)
-    return traj;
+    print solution.GetSolution()
+    print robot.GetActiveDOFIndices()
+    if solution.GetSolution() != []:
+        traj =  robot.PlanToConfiguration(solution.GetSolution(),execute=True)
+        return traj;
+    else:
+        return False;
 
 def PlanToOffset(env, robot, offset):
     transform = robot.arm.GetEndEffectorTransform()
     transform[0:3, 3] += offset;
     traj = PlanToTransform(env, robot, transform);
     return traj
+
+def sweepBack(theta):
+    r_increment = 0.05
+    max_r = 0.5
+    min_r = 0.15
+    curr_r = 0.5
+
+    while curr_r > min_r:
+        translate = numpy.array([[1, 0, 0, curr_r * numpy.cos(theta)],
+                        [0, 1, 0, curr_r * numpy.sin(theta)],
+                        [0, 0, 1, 0.25],
+                        [0, 0, 0, 1]])
+
+        z_angle = numpy.pi/2 + theta
+        z_rot = numpy.array([[numpy.cos(z_angle), -numpy.sin(z_angle), 0, 0.0],
+                    [numpy.sin(z_angle), numpy.cos(z_angle), 0, 0.0],
+                    [0, 0, 1, 0.0],
+                    [0, 0, 0, 1]])
+        end_pose_final = numpy.dot(translate, z_rot)
+
+        PlanToTransform(env, robot, end_pose_final)
+
+        curr_r = curr_r - r_increment
+
+def sweepForward(theta):
+    r_increment = 0.05
+    max_r = 0.5
+    min_r = 0.15
+    curr_r = 0.15
+
+    while min_r < curr_r:
+        translate = numpy.array([[1, 0, 0, curr_r * numpy.cos(theta)],
+                        [0, 1, 0, curr_r * numpy.sin(theta)],
+                        [0, 0, 1, 0.25],
+                        [0, 0, 0, 1]])
+
+        z_angle = numpy.pi/2 + theta
+        z_rot = numpy.array([[numpy.cos(z_angle), -numpy.sin(z_angle), 0, 0.0],
+                    [numpy.sin(z_angle), numpy.cos(z_angle), 0, 0.0],
+                    [0, 0, 1, 0.0],
+                    [0, 0, 0, 1]])
+        end_pose_final = numpy.dot(translate, z_rot)
+
+        PlanToTransform(env, robot, end_pose_final)
+
+        curr_r = curr_r - r_increment
+
+def goToHome():
+
+    global currTheta
+    global currR
+    global currHeight
+
+    currTheta = numpy.around(numpy.pi/4, 4)
+    currR = 0.15
+    currHeight = 0.25
+
+    moveTo(currTheta, currR, currHeight)
+
+def moveTo(theta, r, height):
+    translate = numpy.array([[1, 0, 0, r * numpy.cos(theta)],
+                    [0, 1, 0, r * numpy.sin(theta)],
+                    [0, 0, 1, height],
+                    [0, 0, 0, 1]])
+
+    z_angle = -numpy.pi/2 + theta
+    z_rot = numpy.array([[numpy.cos(z_angle), -numpy.sin(z_angle), 0, 0.0],
+                [numpy.sin(z_angle), numpy.cos(z_angle), 0, 0.0],
+                [0, 0, 1, 0.0],
+                [0, 0, 0, 1]])
+    end_pose_final = numpy.dot(translate, z_rot)
+
+    return PlanToTransform(env, robot, end_pose_final)
+
+def motionTo(desired_theta, desired_r, desired_height):
+
+    global currTheta
+    global currR
+    global currHeight
+
+    move_increment = 0.05
+    angle_increment = 0.02
+    
+    #while numpy.abs(currTheta - desired_theta) >= (angle_increment/2):
+
+    #    if currTheta > desired_theta:
+    #        currTheta = numpy.around(currTheta - angle_increment, 4)
+    #    else:
+    #        currTheta = numpy.around(currTheta + angle_increment, 4)
+
+    #    traj = moveTo(currTheta, currR, currHeight)
+
+    if currTheta != desired_theta:
+
+        currTheta = desired_theta
+        traj = moveTo(currTheta, currR, currHeight)
+
+    while numpy.abs(currHeight - desired_height) >= (move_increment/2):
+
+        if currHeight > desired_height:
+            testHeight = numpy.around(currHeight - move_increment, 4)
+        else:
+            testHeight = numpy.around(currHeight + move_increment, 4)
+
+        traj = moveTo(currTheta, currR, testHeight)
+
+        if traj == False:
+            return
+        else:
+            currHeight = testHeight
+
+    while numpy.abs(currR - desired_r) >= (move_increment/2):
+
+        if currR > desired_r:
+            testR = numpy.around(currR - move_increment, 4)
+        else:
+            testR = numpy.around(currR + move_increment, 4)
+
+        traj = moveTo(currTheta, testR, currHeight)
+
+        if traj == False:
+            return
+        else:
+            currR = testR
 
 rospy.init_node('test_scenario', anonymous = True)
 openravepy.RaveInitialize(True, level=openravepy.DebugLevel.Error)
@@ -38,18 +178,20 @@ values[1] = values[1] - 0.3
 robot.PlanToConfiguration(values, execute=True)
 ada_pose = numpy.array([[1, 0, 0, 0],
                         [0, 1, 0, 0],
-                        [0, 0, 1, 0.8],
+                        [0, 0, 1, 0],
                         [0, 0, 0, 1]])
-box_pose = numpy.array([[1, 0, 0, 0.2],
-                        [0, 1, 0, 0.2],
-                        [0, 0, 1, 1.4],
-                        [0, 0, 0, 1]])
-end_pose = numpy.array([[1, 0, 0, 0.2],
-                        [0, 1, 0, 0.2],
-                        [0, 0, 1, 0.6],
-                        [0, 0, 0, 1]])
-env.GetBodies()[0].SetTransform(box_pose)
+#box_pose = numpy.array([[1, 0, 0, 0.25],
+#                        [0, 1, 0, -0.25],
+#                        [0, 0, 1, 0.6],
+#                        [0, 0, 0, 1]])
+#end_pose = numpy.array([[1, 0, 0, 0.25],
+#                        [0, 1, 0, 0.25],
+#                        [0, 0, 1, 0],
+#                        [0, 0, 0, 1]])
+#bowl = env.GetBodies()[0]
+#bowl.SetTransform(box_pose)
 robot.SetTransform(ada_pose)
+goToHome()
 
 # camera_pose = numpy.array([[ 0.3259757 ,  0.31990565, -0.88960678,  2.84039211],
 #                            [ 0.94516159, -0.0901412 ,  0.31391738, -0.87847549],
@@ -72,8 +214,8 @@ robot.SetTransform(ada_pose)
 #env = openravepy.Environment()
 #env.SetViewer('rviz')
 
-box = env.GetBodies()[1]
-PlanToTransform(env,robot,end_pose)
+#box = env.GetBodies()[0]
+#PlanToTransform(env,robot,end_pose)
 
 #arm_transform[1][3] = box_transform[1][3] + 0.1
 #arm_transform[2][3] = box_transform[2][3] + 0.1

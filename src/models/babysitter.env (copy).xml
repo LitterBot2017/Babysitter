@@ -10,6 +10,11 @@
       <rotationaxis>1 0 0 0</rotationaxis>
     </KinBody>
 
+    <KinBody file="/home/mrsd/Code/ra_ws/src/babysitter/src/models/fuze_bottle.kinbody.xml">
+      <Translation>0.4 0.4 1.1</Translation>
+      <rotationaxis>1 0 0 0</rotationaxis>
+    </KinBody>
+
     <sensor name="BaseCamera1" file="./camera.sensor.xml">
   		<translation>0 0 1</translation>
   		<rotationaxis>0 0 1 270</rotationaxis>

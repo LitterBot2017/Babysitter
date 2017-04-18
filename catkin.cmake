@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
                     prpy
 #                   or_cdchomp
                     cbirrt2
+                    offscreen_render
             )
  
 # For system dependencies, use CMake's 'find_package' macros.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import logging, prpy, openravepy, adapy
+import logging, prpy, openravepy, adapy, action, tsr
 
 URDF_PATH = 'package://ada_description/robots/mico.urdf'
 SRDF_PATH = 'package://ada_description/robots/mico.srdf'
