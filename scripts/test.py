@@ -14,7 +14,8 @@ currR = 0
 currHeight = 0
 
 #traj1 = openravepy.planningutils.RetimeActiveDOFTrajectory(traj, robot, False, 0.2, 0.2, "LinearTrajectoryRetimer", "")
-#traj = a.PlanToEndEffectorOffset(robot, [0.25, 0.25, 0], 0.1, )
+#traj = a.PlanToEndEffectorOffset(robot, [0.25, 0.25, 0], 0.1)
+# a = CBiRRTPlanner()
 
 
 def PlanToTransform(env, robot, transform):
@@ -25,11 +26,21 @@ def PlanToTransform(env, robot, transform):
     solution = iksolver.Solve(param, robot.GetActiveDOFValues(),  0)
     print solution.GetSolution()
     print robot.GetActiveDOFIndices()
+    import IPython
+    IPython.embed()
     if solution.GetSolution() != []:
-        traj =  robot.PlanToConfiguration(solution.GetSolution(),execute=True)
-        return traj;
+       traj =  robot.PlanToConfiguration(solution.GetSolution(), execute=True)
+       return traj;
     else:
-        return False;
+       return False;
+    # a = CBiRRTPlanner()
+    # traj = a.PlanToEndEffectorPose(robot, transform, jointstarts=[robot.GetActiveDOFValues()])
+    # traj = a.PlanToEndEffectorPose(robot, transform)
+    # traj = a.PlanToEndEffectorOffset(robot, [0.25, 0.25, 0], 0.1)
+    # traj1 = openravepy.planningutils.RetimeActiveDOFTrajectory(traj, robot, False, 0.5, 0.5, "LinearTrajectoryRetimer", "")
+    # robot.ExecuteTrajectory(traj, execute=True)
+    embed()
+
 
 def PlanToOffset(env, robot, offset):
     transform = robot.arm.GetEndEffectorTransform()
@@ -89,11 +100,32 @@ def goToHome():
     global currR
     global currHeight
 
-    currTheta = numpy.around(numpy.pi/4, 4)
-    currR = 0.15
-    currHeight = 0.25
+    currTheta = 0 #numpy.around(numpy.pi/4, 4)
+    currR = 0.35
+    currHeight = 0.1
 
-    moveTo(currTheta, currR, currHeight)
+    embed()
+
+    robot.arm.PlanToNamedConfiguration("home", execute=True)
+    # moveTo(currTheta, currR, currHeight)
+    ### RANDOM FUCKING TEST SHIT
+    # transform = robot.arm.GetEndEffectorTransform()
+    # transform[0,3] = transform[0,3] + 0.05
+    # transform[1,3] = transform[1,3] + 0.05
+    # handle = openravepy.misc.DrawAxes(env, transform);
+    # iksolver = robot.arm.GetIkSolver()
+    # param = openravepy.IkParameterization(transform, openravepy.IkParameterizationType.Transform6D)
+    # solution = iksolver.Solve(param, robot.GetActiveDOFValues(),  0)
+    # print solution.GetSolution()
+    # print robot.GetActiveDOFIndices()
+    # import IPython
+    # IPython.embed()
+    # if solution.GetSolution() != []:
+    #    traj =  robot.PlanToConfiguration(solution.GetSolution(), execute=True)
+    #    return traj;
+    # else:
+    #    return False;
+
 
 def moveTo(theta, r, height):
     translate = numpy.array([[1, 0, 0, r * numpy.cos(theta)],
@@ -101,7 +133,7 @@ def moveTo(theta, r, height):
                     [0, 0, 1, height],
                     [0, 0, 0, 1]])
 
-    z_angle = -numpy.pi/2 + theta
+    z_angle = numpy.pi/2 + theta
     z_rot = numpy.array([[numpy.cos(z_angle), -numpy.sin(z_angle), 0, 0.0],
                 [numpy.sin(z_angle), numpy.cos(z_angle), 0, 0.0],
                 [0, 0, 1, 0.0],
@@ -165,7 +197,8 @@ rospy.init_node('test_scenario', anonymous = True)
 openravepy.RaveInitialize(True, level=openravepy.DebugLevel.Error)
 openravepy.misc.InitOpenRAVELogging();
 
-env, robot = adapy.initialize(env_path='/home/mrsd/Code/ra_ws/src/babysitter/src/models/babysitter.env.xml', attach_viewer='rviz', sim=True)
+env, robot = adapy.initialize(env_path='/home/yyn/Code/catkin_ws/src/babysitter/src/models/babysitter.env.xml', attach_viewer='rviz', sim=False)
+# env, robot = adapy.initialize(env_path='/home/yyn/Code/catkin_ws/src/babysitter/src/models/babysitter.env.xml', attach_viewer='rviz', sim=True)
 manip = robot.arm
 
 
@@ -178,7 +211,7 @@ values[1] = values[1] - 0.3
 robot.PlanToConfiguration(values, execute=True)
 ada_pose = numpy.array([[1, 0, 0, 0],
                         [0, 1, 0, 0],
-                        [0, 0, 1, 0],
+                        [0, 0, 1, 0.01],
                         [0, 0, 0, 1]])
 #box_pose = numpy.array([[1, 0, 0, 0.25],
 #                        [0, 1, 0, -0.25],
@@ -236,5 +269,5 @@ goToHome()
 #cv2.imshow("Image window", image)
 #cv2.waitKey(3)
 
-from IPython import embed
+#from IPython import embed
 embed()
