@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
                     rospy
                     prpy
 #                   or_cdchomp
+					message_generation
                     cbirrt2
                     offscreen_render
             )
@@ -19,7 +20,9 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(openrave REQUIRED)
  
 # Set up the ROS Catkin package settings.
-catkin_package()
+catkin_package(
+	CATKIN_DEPENDS message_runtime
+)
  
 # Some system dependencies don't have 'find_package' macros.  For these
 # packages, CMake includes a helper function which can resolve the libraries

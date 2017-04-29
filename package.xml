@@ -29,6 +29,8 @@
     <depend>opencv3</depend>
     <depend>cv_bridge</depend>
     <depend>offscreen_render</depend>
+    <depend>message_generation</depend>
+    <depend>message_runtime</depend>
     
 </package>
 

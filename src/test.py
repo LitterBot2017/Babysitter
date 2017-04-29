@@ -23,7 +23,7 @@ rospy.init_node('test_scenario', anonymous = True)
 
 env, robot = adapy.initialize(attach_viewer='rviz', sim=True)
 manip = robot.arm
-env.Load('/home/mrsd/Code/ra_ws/src/babysitter/src/models/babysitter.env.xml')
+env.Load('/home/yyn/Code/catkin_ws/src/babysitter/src/models/babysitter.env.xml')
 
 #manip.SetIkSolver(openravepy.RaveCreateIkSolver(env, 'NloptIK'))
 #robot.SetActiveDOFs([2,3,4,5,6,7])
